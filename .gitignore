@@ -1,0 +1,16 @@
+*.so
+*.a
+*.o
+*.o.ll
+*.d
+*.bc
+*.bc.ll
+*.bc.ll.ps
+*.bc.ll.pdf
+*.out
+
+*.swp
+
+dag
+partition
+showgraph
