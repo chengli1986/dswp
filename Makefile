@@ -3,7 +3,7 @@ CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -g -O0
 .PHONY: all runtime-tests gdb/% valgrind/% time/% \
 		tidy clean clean-examples
 
-all: DSWP.so runtime/libruntime.a
+all: clean DSWP.so runtime/libruntime.a
 
 PASS_OBJS = DSWP_0.o DSWP_1.o DSWP_2.o DSWP_3.o DSWP_4.o DSWP_5.o DSWP_DEBUG.o \
 	        Utils.o raw_os_ostream.o
@@ -30,8 +30,11 @@ runtime/tests/%.o: runtime/tests/%.c
 runtime/%.o: runtime/%.c
 	$(COMPILE.c) -pthread $< -o $@
 
+# depends on runtime/tests/%.o and libruntime.a
 runtime/tests/%: runtime/tests/%.o runtime/libruntime.a
 	$(LINK.o) -pthread $^ -o $@
+
+# depends on runtime/tests/test and runtime/tests/sync_test
 runtime-tests: runtime/tests/test runtime/tests/sync_test
 	runtime/tests/test
 	runtime/tests/sync_test
@@ -59,10 +62,14 @@ valgrind/%: Example/%.bc DSWP.so
 ### (dis)assembling bitcode
 Example/%.bc.ll: Example/%.bc
 	llvm-dis $< -o $@
+
+
+# Utility: print to PS and PDF
 Example/%.bc.ll.ps: Example/%.bc.ll
 	enscript $< -q -E -fCourier10 --tabsize=4 -p $@
 Example/%.bc.ll.pdf: Example/%.bc.ll.ps
 	ps2pdf $< $@
+
 Example/%.o: Example/%.bc
 	clang -O0 -c $< -o $@
 Example/%.out: Example/%.bc runtime/libruntime.a
