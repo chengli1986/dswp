@@ -21,7 +21,7 @@ Edge::Edge(Instruction *u, Instruction *v, DType dtype) {
 
 char DSWP::ID = 0;
 static RegisterPass<DSWP> X("dswp",
-                            "15745 Decoupled Software Pipeline",
+                            "EECE571P Project: Decoupled Software Pipeline",
                             false, false);
 
 // DSWP constructor
@@ -32,73 +32,74 @@ DSWP::DSWP() : LoopPass (ID){
 bool DSWP::doInitialization(Loop *L, LPPassManager &LPM) {
   Module *mod = L->getHeader()->getParent()->getParent();
   Function *produce = mod->getFunction("sync_produce");
-  if (produce == NULL) {	//the first time, we need to link them
-    LLVMContext &ctx = mod->getContext();
-    Type *void_ty = Type::getVoidTy(ctx),
-                     *int32_ty = Type::getInt32Ty(ctx),
-		     *int64_ty = Type::getInt64Ty(ctx),
-		     *int8_ptr_ty = Type::getInt8PtrTy(ctx),
-		     *elTy = int64_ty;
+  if (produce == NULL) {
+      //the first time, we need to link them
+      LLVMContext &ctx = mod->getContext();
+      Type *void_ty = Type::getVoidTy(ctx),
+           *int32_ty = Type::getInt32Ty(ctx),
+           *int64_ty = Type::getInt64Ty(ctx),
+           *int8_ptr_ty = Type::getInt8PtrTy(ctx),
+           *elTy = int64_ty;
 
-    //add sync_produce function
-    vector<Type *> produce_arg;
-    produce_arg.push_back(elTy);
-    produce_arg.push_back(int32_ty);
-    FunctionType *produce_ft = FunctionType::get(void_ty, produce_arg, false);
-    produce = Function::Create(produce_ft, Function::ExternalLinkage, "sync_produce", mod);
-    produce->setCallingConv(CallingConv::C);
+      //add sync_produce function
+      vector<Type *> produce_arg;
+      produce_arg.push_back(elTy);
+      produce_arg.push_back(int32_ty);
+      FunctionType *produce_ft = FunctionType::get(void_ty, produce_arg, false);
+      produce = Function::Create(produce_ft, Function::ExternalLinkage, "sync_produce", mod);
+      produce->setCallingConv(CallingConv::C);
 
-    //add syn_consume function
-    vector<Type *> consume_arg;
-    consume_arg.push_back(int32_ty);
-    FunctionType *consume_ft = FunctionType::get(elTy, consume_arg, false);
-    Function *consume = Function::Create(consume_ft, Function::ExternalLinkage, "sync_consume", mod);
-    consume->setCallingConv(CallingConv::C);
+      //add syn_consume function
+      vector<Type *> consume_arg;
+      consume_arg.push_back(int32_ty);
+      FunctionType *consume_ft = FunctionType::get(elTy, consume_arg, false);
+      Function *consume = Function::Create(consume_ft, Function::ExternalLinkage, "sync_consume", mod);
+      consume->setCallingConv(CallingConv::C);
 
-    //add sync_join
-    FunctionType *join_ft = FunctionType::get(void_ty, false);
-    Function *join = Function::Create(join_ft, Function::ExternalLinkage, "sync_join", mod);
-    join->setCallingConv(CallingConv::C);
+      //add sync_join
+      FunctionType *join_ft = FunctionType::get(void_ty, false);
+      Function *join = Function::Create(join_ft, Function::ExternalLinkage, "sync_join", mod);
+      join->setCallingConv(CallingConv::C);
 
-    //add sync_init
-    FunctionType *init_ft = FunctionType::get(void_ty, false);
-    Function *init = Function::Create(init_ft, Function::ExternalLinkage, "sync_init", mod);
-    init->setCallingConv(CallingConv::C);
+      //add sync_init
+      FunctionType *init_ft = FunctionType::get(void_ty, false);
+      Function *init = Function::Create(init_ft, Function::ExternalLinkage, "sync_init", mod);
+      init->setCallingConv(CallingConv::C);
 
-    //add sync_delegate
-    vector<Type *>  argFunArg;
-    argFunArg.push_back(int8_ptr_ty);
-    FunctionType *argFun = FunctionType::get(int8_ptr_ty, argFunArg, false);
+      //add sync_delegate
+      vector<Type *>  argFunArg;
+      argFunArg.push_back(int8_ptr_ty);
+      FunctionType *argFun = FunctionType::get(int8_ptr_ty, argFunArg, false);
 
-    vector<Type *> delegate_arg;
-    delegate_arg.push_back(int32_ty);
-    delegate_arg.push_back(PointerType::get(argFun, 0));
-    delegate_arg.push_back(int8_ptr_ty);
-    FunctionType *delegate_ft = FunctionType::get(void_ty, delegate_arg, false);
-    Function *delegate = Function::Create(delegate_ft, Function::ExternalLinkage, "sync_delegate", mod);
-    delegate->setCallingConv(CallingConv::C);
+      vector<Type *> delegate_arg;
+      delegate_arg.push_back(int32_ty);
+      delegate_arg.push_back(PointerType::get(argFun, 0));
+      delegate_arg.push_back(int8_ptr_ty);
+      FunctionType *delegate_ft = FunctionType::get(void_ty, delegate_arg, false);
+      Function *delegate = Function::Create(delegate_ft, Function::ExternalLinkage, "sync_delegate", mod);
+      delegate->setCallingConv(CallingConv::C);
 
-    //add show value
-    vector<Type *> show_arg;
-    show_arg.push_back(int64_ty);
-    FunctionType *show_ft = FunctionType::get(void_ty, show_arg, false);
-    Function *show = Function::Create(show_ft, Function::ExternalLinkage, "showValue", mod);
-    show->setCallingConv(CallingConv::C);
+      //add show value
+      vector<Type *> show_arg;
+      show_arg.push_back(int64_ty);
+      FunctionType *show_ft = FunctionType::get(void_ty, show_arg, false);
+      Function *show = Function::Create(show_ft, Function::ExternalLinkage, "showValue", mod);
+      show->setCallingConv(CallingConv::C);
 
-    //add showPlace value
-    vector<Type *> show2_arg;
-    FunctionType *show2_ft = FunctionType::get(void_ty, show2_arg, false);
-    Function *show2 = Function::Create(show2_ft, Function::ExternalLinkage, "showPlace", mod);
-    show2->setCallingConv(CallingConv::C);
+      //add showPlace value
+      vector<Type *> show2_arg;
+      FunctionType *show2_ft = FunctionType::get(void_ty, show2_arg, false);
+      Function *show2 = Function::Create(show2_ft, Function::ExternalLinkage, "showPlace", mod);
+      show2->setCallingConv(CallingConv::C);
 
-    //add showPtr value
-    vector<Type *> show3_arg;
-    show3_arg.push_back(int8_ptr_ty);
-    FunctionType *show3_ft = FunctionType::get(void_ty, show3_arg, false);
-    Function *show3 = Function::Create(show3_ft, Function::ExternalLinkage, "showPtr", mod);
-    show3->setCallingConv(CallingConv::C);
+      //add showPtr value
+      vector<Type *> show3_arg;
+      show3_arg.push_back(int8_ptr_ty);
+      FunctionType *show3_ft = FunctionType::get(void_ty, show3_arg, false);
+      Function *show3 = Function::Create(show3_ft, Function::ExternalLinkage, "showPtr", mod);
+      show3->setCallingConv(CallingConv::C);
 
-    return true;
+      return true;
   }
   return false;
 }
@@ -128,11 +129,11 @@ bool DSWP::initialize(Loop *L) {
   loopCounter++;
 
   if (exit == NULL) {
-    cerr << "loop exit not unique" << endl;
-    return true;
+      cerr << "loop exit not unique" << endl;
+      return true;
   } else if (predecessor == NULL) {
-    cerr << "loop predecessor not unique" << endl;
-    return true;
+      cerr << "loop predecessor not unique" << endl;
+      return true;
   }
   return false;
 }
@@ -140,17 +141,17 @@ bool DSWP::initialize(Loop *L) {
 
 bool DSWP::runOnLoop(Loop *L, LPPassManager &LPM) {
   if (L->getLoopDepth() != 1)	//ONLY care about top level loops
-    return false;
+      return false;
 
   if (generated.find(L->getHeader()->getParent()) != generated.end())	//this is the generated code
-    return false;
+      return false;
 
   cout << "///////////////////////////// we are running on a loop" << endl;
 
   bool bad = initialize(L);
   if (bad) {
-    clear();
-    return false;
+      clear();
+      return false;
   }
 
   buildPDG(L);
@@ -158,9 +159,9 @@ bool DSWP::runOnLoop(Loop *L, LPPassManager &LPM) {
   findSCC(L);
 
   if (sccNum == 1) {
-    cout << "only one SCC, can't do nuttin" << endl;
-    clear();
-    return false;
+      cout << "only one SCC, can't do nuttin" << endl;
+      clear();
+      return false;
   }
 
   showDAG(L);
@@ -185,20 +186,20 @@ bool DSWP::runOnLoop(Loop *L, LPPassManager &LPM) {
 
 void DSWP::addEdge(Instruction *u, Instruction *v, DType dtype) {
   if (std::find(pdg[u].begin(), pdg[u].end(), Edge(u, v, dtype)) == pdg[u].end()) {
-    pdg[u].push_back(Edge(u, v, dtype));
-    allEdges.push_back(Edge(u, v, dtype));
-    rev[v].push_back(Edge(v, u, dtype));
+      pdg[u].push_back(Edge(u, v, dtype));
+      allEdges.push_back(Edge(u, v, dtype));
+      rev[v].push_back(Edge(v, u, dtype));
   } else {
-    cout<<">>Skipping the edge, as it has been added already."<<endl;
+      cout<<">>Skipping the edge, as it has been added already."<<endl;
   }
 }
 
 bool DSWP::checkEdge(Instruction *u, Instruction *v) {
   for (vector<Edge>::iterator it = pdg[u].begin(); it != pdg[v].end(); it++) {
-    if (it->v == v) {
-      //TODO report something
-      return true;
-    }
+      if (it->v == v) {
+          //TODO report something
+          return true;
+      }
   }
   return false;
 }

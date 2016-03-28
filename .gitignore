@@ -12,8 +12,6 @@
 
 *.swp
 
-raw_os_ostream.cpp
-
 dag
 partition
 showgraph
