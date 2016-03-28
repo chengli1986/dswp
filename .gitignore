@@ -8,8 +8,11 @@
 *.bc.ll.ps
 *.bc.ll.pdf
 *.out
+*.d
 
 *.swp
+
+raw_os_ostream.cpp
 
 dag
 partition

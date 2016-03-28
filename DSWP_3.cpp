@@ -42,7 +42,7 @@ void DSWP::threadPartition(Loop *L) {
 
 	// keep a queue of candidate SCCs whose predecessors have all been scheduled
 	priority_queue<QNode> Q;
-	for (unsigned int scc = 0; scc < sccNum; scc++) {
+	for (int scc = 0; scc < sccNum; scc++) {
 		if (scc_parents[scc].empty()) {
 			Q.push(QNode(scc, sccLatency[scc]));
 		}

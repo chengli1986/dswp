@@ -40,183 +40,173 @@ static const int MAX_THREAD = 2;
 //DSYN: data dependency - read after read
 
 enum DType {
-	REG, DTRUE, DANTI, DOUT, DSYN, CONTROL, CONTROL_LC
+  REG, DTRUE, DANTI, DOUT, DSYN, CONTROL, CONTROL_LC
 };
 
 struct Edge {
-	Instruction *u, *v;
-	DType dtype;
-	Edge(Instruction *u, Instruction *v, DType dtype);
+  Instruction *u, *v;
+  DType dtype;
+  Edge(Instruction *u, Instruction *v, DType dtype);
 
-	bool operator== (const Edge& rhs) const {
-		return (this->u == rhs.u && this->v == rhs.v 
-				&& this->dtype == rhs.dtype);
-	}
+  bool operator== (const Edge& rhs) const {
+    return (this->u == rhs.u && this->v == rhs.v && this->dtype == rhs.dtype);
+  }
 };
 
 struct QNode {
-	int u;
-	int latency;
-	QNode(int u, int latency);
-	bool operator <(const QNode &y) const;
+  int u;
+  int latency;
+  QNode(int u, int latency);
+  bool operator <(const QNode &y) const;
 };
 
 class DSWP: public LoopPass {
 
 private:
-	//neccesary information
-	Module *module;
-	Function *func;
-	BasicBlock *header;
-	BasicBlock *predecessor;
-	BasicBlock *exit;
-	LLVMContext *context;
-	Type *eleType;
-	int loopCounter;
+  //necessary information
+  Module *module;
+  Function *func;
+  BasicBlock *header;
+  BasicBlock *predecessor;
+  BasicBlock *exit;
+  LLVMContext *context;
+  Type *eleType;
+  int loopCounter;
 
-	set<Function *> generated;	//all generated function that should not be run in the pass
+  set<Function *> generated;	//all generated function that should not be run in the pass
 
-	// part 0: initial setup and helpers for dependency
-	bool initialize(Loop *L);
+  // part 0: initial setup and helpers for dependency
+  bool initialize(Loop *L);
+  void addEdge(Instruction *u, Instruction *v, DType dtype);
+  bool checkEdge(Instruction *u, Instruction *v);
 
-	void addEdge(Instruction *u, Instruction *v, DType dtype);
-	bool checkEdge(Instruction *u, Instruction *v);
+  //part 1: program dependence graph
+  void buildPDG(Loop *L);
+  void checkControlDependence(BasicBlock *a, BasicBlock *b, PostDominatorTree &pdt);
+  void addControlDependence(BasicBlock *a, BasicBlock *b);
+  void dfsVisit(BasicBlock *BB, std::set<BasicBlock *> &vis,
+                    std::vector<BasicBlock *> &ord, Loop *L);
 
-	//part 1: program dependence graph
-	void buildPDG(Loop *L);
+  //part 2: scc and dag
+  void findSCC(Loop *L);
+  void dfs_forward(Instruction *inst);
+  void dfs_reverse(Instruction *inst);
 
-	void checkControlDependence(BasicBlock *a, BasicBlock *b,
-								PostDominatorTree &pdt);
+  //program dependence graph
+  map<Instruction *, vector<Edge> > pdg;
+  //reverse graph for scc
+  map<Instruction *, vector<Edge> > rev;
 
-	void addControlDependence(BasicBlock *a, BasicBlock *b);
+  // DAG of the SCC relationships
+  map<int, vector<int> > scc_dependents;
+  map<int, vector<int> > scc_parents;
 
-	void dfsVisit(BasicBlock *BB, std::set<BasicBlock *> &vis,
-				  std::vector<BasicBlock *> &ord, Loop *L);
+  //edge lookup for SCC dag
+  map<std::pair<int, int>, bool> dag_added;
 
-	//part 2: scc and dag
-	void findSCC(Loop *L);
+  //edge table, all the dependency relationship
+  vector<Edge> allEdges;
 
-	void dfs_forward(Instruction *inst);
-	void dfs_reverse(Instruction *inst);
+  vector<vector<Instruction *> > InstInSCC;
 
-	//program dependence graph
-	map<Instruction *, vector<Edge> > pdg;
-	//reverse graph for scc
-	map<Instruction *, vector<Edge> > rev;
+  // the immediate dominator and postdominator for each basic block
+  map<BasicBlock *, BasicBlock *> idom, postidom;
 
-	// DAG of the SCC relationships
-	map<int, vector<int> > scc_dependents;
-	map<int, vector<int> > scc_parents;
+  //total number of scc
+  int sccNum;
 
-	//edge lookup for SCC dag
-	map<std::pair<int, int>, bool> dag_added;
+  //map instruction to sccId
+  map<Instruction *, int> sccId;
 
-	//edge table, all the dependency relationship
-	vector<Edge> allEdges;
+  //tmp flag
+  map<Instruction *, bool> used;
 
-	vector<vector<Instruction *> > InstInSCC;
+  //store the dfs sequence
+  vector<Instruction *> list;
 
-	// the immediate dominator and postdominator for each basic block
-	map<BasicBlock *, BasicBlock *> idom, postidom;
+  BasicBlock * replaceBlock;
 
-	//total number of scc
-	int sccNum;
+  //part 3: thread partition
+  void threadPartition(Loop *L);
 
-	//map instruction to sccId
-	map<Instruction *, int> sccId;
+  //get the latency estimate of a instruction
+  int getLatency(Instruction *I);
 
-	//tmp flag
-	map<Instruction *, bool> used;
+  //assigned[i] = node i in dag has been assgined to assigned[i] thread
+  vector<int> assigned;
 
-	//store the dfs sequence
-	vector<Instruction *> list;
+  int getInstAssigned(Value *inst);
 
-	BasicBlock * replaceBlock;
+  //part[i] = i thread contains part[i] nodes of the dag
+  vector<int> part[MAX_THREAD];
+  //set<BasicBlock *> BBS[MAX_THREAD];
 
-	//part 3: thread partition
-	void threadPartition(Loop *L);
+  //total lantency within a scc
+  vector<int> sccLatency;
 
-	//get the latency estimate of a instruction
-	int getLatency(Instruction *I);
+  //part 4: code splitting
+  void preLoopSplit(Loop *L);
+  void loopSplit(Loop *L);
+  StructType *argStructTy; // the type of the struct that worker threads get
 
-	//assigned[i] = node i in dag has been assgined to assigned[i] thread
-	vector<int> assigned;
+  // map from old instructions to new instuction, by thread
+  map<Value *, Value *> instMap[MAX_THREAD];
 
-	int getInstAssigned(Value *inst);
+  // keep track of where we should insert produces() for each old instruction
+  // in each thread, if we need them. maps to the following instruction.
+  map<Instruction *, Instruction *> placeEquivalents[MAX_THREAD];
 
-	//part[i] = i thread contains part[i] nodes of the dag
-	vector<int> part[MAX_THREAD];
-	//set<BasicBlock *> BBS[MAX_THREAD];
+  map<Value *, Value *> newToOld;
+  map<Value *, int> newInstAssigned; // which thread each new inst is in
 
-	//total lantency within a scc
-	vector<int> sccLatency;
+  int getNewInstAssigned(Value *inst);
 
-	//part 4: code splitting
-	void preLoopSplit(Loop *L);
+  //the new functions (has already been inserted, waiting for syn)
+  vector<Function *> allFunc;
 
-	void loopSplit(Loop *L);
-	StructType *argStructTy; // the type of the struct that worker threads get
+  // get dominator information
+  void getDominators(Loop *L);
 
-	// map from old instructions to new instuction, by thread
-	map<Value *, Value *> instMap[MAX_THREAD];
+  //get live variable information
+  void getLiveinfo(Loop *L);
+  vector<Value *> livein; // inputs to the loop
+  vector<Value *> defin; // variable generated within the loop
+  vector<Value *> liveout; // variables needed after the loop is done
 
-	// keep track of where we should insert produces() for each old instruction
-	// in each thread, if we need them. maps to the following instruction.
-	map<Instruction *, Instruction *> placeEquivalents[MAX_THREAD];
-
-	map<Value *, Value *> newToOld;
-	map<Value *, int> newInstAssigned; // which thread each new inst is in
-
-	int getNewInstAssigned(Value *inst);
-
-	//the new functions (has already been inserted, waiting for syn)
-	vector<Function *> allFunc;
-
-	// get dominator information
-	void getDominators(Loop *L);
-
-	//get live variable information
-	void getLiveinfo(Loop *L);
-	vector<Value *> livein; // inputs to the loop
-	vector<Value *> defin; // variable generated within the loop
-	vector<Value *> liveout; // variables needed after the loop is done
-
-	// part 5: synchronization insertion
-	void insertSynchronization(Loop *L);
-
-	void insertProduce(Instruction * u, Instruction *v, DType dtype,
+  // part 5: synchronization insertion
+  void insertSynchronization(Loop *L);
+  void insertProduce(Instruction * u, Instruction *v, DType dtype,
+                        int channel, int uthread, int vthread);
+  void insertConsume(Instruction * u, Instruction *v, DType dtype,
 			int channel, int uthread, int vthread);
 
-	void insertConsume(Instruction * u, Instruction *v, DType dtype,
-			int channel, int uthread, int vthread);
+  void cleanup(Loop *L, LPPassManager &LPM);
+  void clear();
 
-	void cleanup(Loop *L, LPPassManager &LPM);
-	void clear();
+  //test function
+  void showGraph(Loop *L);
 
-	//test function
-	void showGraph(Loop *L);
+  //show DAG information
+  void showDAG(Loop *L);
 
-	//show DAC information
-	void showDAG(Loop *L);
+  //show partition
+  void showPartition(Loop *L);
 
-	//show partition
-	void showPartition(Loop *L);
+  //show live in and live out set
+  void showLiveInfo(Loop *L);
 
-	//show live in and live out set
-	void showLiveInfo(Loop *L);
+  Utils util;
 
-	Utils util;
-
-	//give each instruction a name, including terminator instructions (which can not be setName)
-	map<Instruction *, string> dname;
+  //give each instruction a name, including terminator instructions (which can not be setName)
+  map<Instruction *, string> dname;
 
 public:
-	static char ID;
-	DSWP();
-	virtual void getAnalysisUsage(AnalysisUsage &AU) const;
-	virtual bool runOnLoop(Loop *L, LPPassManager &LPM);
-	virtual bool doInitialization(Loop *, LPPassManager &LPM);
-	//virtual bool doFinalization();
+  static char ID;
+  DSWP();
+  virtual void getAnalysisUsage(AnalysisUsage &AU) const;
+  virtual bool runOnLoop(Loop *L, LPPassManager &LPM);
+  virtual bool doInitialization(Loop *, LPPassManager &LPM);
+  //virtual bool doFinalization();
 };
 
 #endif
