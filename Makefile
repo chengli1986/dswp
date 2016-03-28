@@ -11,16 +11,25 @@ PASS_OBJS = DSWP_0.o DSWP_1.o DSWP_2.o DSWP_3.o DSWP_4.o DSWP_5.o DSWP_DEBUG.o \
 	        Utils.o
 RUNTIME_OBJS = runtime/queue.o runtime/simple_sync.o runtime/runtime_debug.o
 RT_TEST_OBJS = runtime/tests/sync_test.o runtime/tests/test.o
--include $(PASS_OBJS:%.o=%.d) $(RUNTIME_OBJS:%.o=%.d) $(RT_TEST_OBJS:%.o=%.d)
+#-include $(PASS_OBJS:%.o=%.d) $(RUNTIME_OBJS:%.o=%.d) $(RT_TEST_OBJS:%.o=%.d)
 
 ### the main pass
+# $(CXX) = g++
+# -dylib is for MacOS...
+# -flat_namespace is also for MacOS...
 DSWP.so: $(PASS_OBJS)
-	$(CXX) -dylib -shared -g -O0  $^ -o $@
+	$(CXX) -shared -g -O0  $^ -o $@
 	#$(CXX) -dylib -flat_namespace -shared -g -O0  $^ -o $@
+
 # We're including raw_os_ostream.o because we can't just link in libLLVMSupport:
 # http://lists.cs.uiuc.edu/pipermail/llvmdev/2010-June/032508.html
 
 ### the runtime library
+# manipulate the static library/archive
+# include all runtime objects
+# r - insert file members to the archive
+# c - create the archive
+# s - write  an object-file index into the archive, or update an existing one
 runtime/libruntime.a: $(RUNTIME_OBJS)
 	ar rcs $@ $^
 
@@ -72,8 +81,12 @@ Example/%.bc.ll.pdf: Example/%.bc.ll.ps
 
 Example/%.o: Example/%.bc
 	clang -O0 -c $< -o $@
+# -lm is not necessary???
+# http://stackoverflow.com/questions/10447791/what-does-lm-option-do-in-g
+# hmm if I run problem44.c then -lm is necessary
 Example/%.out: Example/%.bc runtime/libruntime.a
 	clang -O0 -pthread $< runtime/libruntime.a -lm -o $@
+	#clang -O0 -pthread $< runtime/libruntime.a -lm -o $@
 run/%: Example/%.out
 	$<
 time/%: Example/%.out
