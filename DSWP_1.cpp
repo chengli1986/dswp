@@ -36,7 +36,6 @@ void DSWP::buildPDG(Loop *L) {
               inst->setName(util.genId());
               dname[inst] = inst->getName().str();
           }
-
           // initialize vectors
           pdg[inst];
           rev[inst];
@@ -52,7 +51,6 @@ void DSWP::buildPDG(Loop *L) {
    */
 
   //AliasAnalysis &aa = Pass::getAnalysis<AliasAnalysis>();
-  //AliasAnalysis &aa = LoopPass::getAnalysis<AliasAnalysis>();
   MemoryDependenceAnalysis &mda = Pass::getAnalysis<MemoryDependenceAnalysis>();
 
   for (Loop::block_iterator bi = L->getBlocks().begin(); bi != L->getBlocks().end(); bi++) {
