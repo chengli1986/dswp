@@ -19,7 +19,7 @@ void queue_destroy(queue_t *q) {
 void queue_push(queue_t *q, unsigned long long elem) {
   pthread_mutex_lock(&(q->mutex));
   while (q->size == QUEUE_MAXLEN) {
-    pthread_cond_wait(&(q->full_cvar), &(q->mutex));
+      pthread_cond_wait(&(q->full_cvar), &(q->mutex));
   }
 
   q->arr[q->tail] = elem;

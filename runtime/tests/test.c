@@ -4,12 +4,14 @@
 #include <unistd.h>
 #include "queue.h"
 
+#define NUMBER 100000
+
 static queue_t *q;
 
 static void *produce(void *arg) {
   int i;
-  for (i = 0; i < 100000; i++) {
-    queue_push(q, 1);
+  for (i = 0; i < NUMBER; i++) {
+      queue_push(q, 1);
   }
   return NULL;
 }
@@ -17,8 +19,8 @@ static void *produce(void *arg) {
 static void *consume(void *arg) {
   int i;
   unsigned long long sum = 0;
-  for (i = 0; i < 100000; i++) {
-    sum += queue_pop(q);
+  for (i = 0; i < NUMBER; i++) {
+      sum += queue_pop(q);
   }
   return (void *)sum;
 }
@@ -31,7 +33,7 @@ static void *block_consume(void *arg) {
 static void *block_produce(void *arg) {
   int i;
   for (i = 0; i < QUEUE_MAXLEN + 1; i++) {
-    queue_push(q, i);
+      queue_push(q, i);
   }
   printf("Blocked producer done!\n");
   return NULL;
@@ -50,19 +52,19 @@ int main(int argc, char *argv[]) {
 
   printf("Creating producers and consumers...\n");
   for (i = 0; i < 10; i++) {
-    pthread_create(&producers[i], NULL, produce, NULL);
-    pthread_create(&consumers[i], NULL, consume, NULL);
+      pthread_create(&producers[i], NULL, produce, NULL);
+      pthread_create(&consumers[i], NULL, consume, NULL);
   }
   printf("Done.\n\n");
 
   printf("Waiting for answers and checking...\n");
   unsigned int ret_val;
   for (i = 0; i < 10; i++) {
-    pthread_join(producers[i], NULL);
-    pthread_join(consumers[i], ((void **)&ret_val));
-    if (ret_val != 100000) {
-      printf("ERROR: values mismatched: %u\n", ret_val);
-    }
+      pthread_join(producers[i], NULL);
+      pthread_join(consumers[i], ((void **)&ret_val));
+      if (ret_val != NUMBER) {
+          printf("ERROR: values mismatched: %u\n", ret_val);
+      }
   }
   printf("Done.\n\n");
 
@@ -72,7 +74,7 @@ int main(int argc, char *argv[]) {
   queue_push(q, 42);
   pthread_join(consumers[0], ((void **)&ret_val));
   if (ret_val != 42) {
-    printf("ERROR: value mismatched: %u\n", ret_val);
+      printf("ERROR: value mismatched: %u\n", ret_val);
   }
 
   pthread_create(&producers[0], NULL, block_produce, NULL);
