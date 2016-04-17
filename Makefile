@@ -59,13 +59,13 @@ runtime/libruntime.a: $(RUNTIME_OBJS)
 # $(COMPILE.c) = cc in ubuntu
 # $(LINK.o) = cc in ubuntu
 runtime/tests/%.o: runtime/tests/%.c
-	$(COMPILE.c) -pthread -Iruntime/ $< -o $@
+	$(COMPILE.c) -g -pthread -Iruntime/ $< -o $@
 runtime/%.o: runtime/%.c
-	$(COMPILE.c) -pthread $< -o $@
+	$(COMPILE.c) -g -pthread $< -o $@
 runtime/tests/%: runtime/tests/%.o runtime/libruntime.a
-	$(LINK.o) -pthread $^ -o $@
-runtime-tests: runtime/tests/test runtime/tests/sync_test
-	runtime/tests/test
+	$(LINK.o) -g -pthread $^ -o $@
+runtime-tests: runtime/tests/queue_test runtime/tests/sync_test # this is necessary as we need build .o files from previous rule!
+	runtime/tests/queue_test
 	runtime/tests/sync_test
 
 ##################################

@@ -21,7 +21,7 @@ Edge::Edge(Instruction *u, Instruction *v, DType dtype) {
 
 char DSWP::ID = 0;
 static RegisterPass<DSWP> X("dswp",
-                            "EECE571P Project: Decoupled Software Pipeline",
+                            "EECE571P Project: Decoupled Software Pipelining",
                             false, false);
 
 // DSWP constructor
@@ -78,6 +78,8 @@ bool DSWP::doInitialization(Loop *L, LPPassManager &LPM) {
       FunctionType *delegate_ft = FunctionType::get(void_ty, delegate_arg, false);
       Function *delegate = Function::Create(delegate_ft, Function::ExternalLinkage, "sync_delegate", mod);
       delegate->setCallingConv(CallingConv::C);
+
+      /* Runtime Debugging */
 
       //add show value
       vector<Type *> show_arg;

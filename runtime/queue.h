@@ -26,7 +26,7 @@ void queue_destroy(queue_t *q);
  * Pushes the specified element onto the end of the queue.  Blocks if the queue
  * is full.
  */
-void queue_push(queue_t *q, unsigned long long elem);
+void queue_push(queue_t *q, unsigned long long val);
 
 /*
  * Pops the next element off the head of the queue.  Blocks if the queue is

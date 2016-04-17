@@ -3,7 +3,7 @@
 #include "queue.h"
 #include "simple_sync.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 static pthread_t threads[NUM_THREADS] = {};
 static queue_t data_queues[NUM_QUEUES] = {};
@@ -11,8 +11,8 @@ static queue_t data_queues[NUM_QUEUES] = {};
 
 void sync_produce(unsigned long long elem, int val_id) {
 #if DEBUG
-  printf("%lld\n", elem);
-  printf("produce in %d\n", val_id);
+  //printf("%lld\n", elem);
+  printf("value [%lld] produced in queue [%d]\n", elem, val_id);
 #endif
   queue_push(&data_queues[val_id], elem);
 }
@@ -20,8 +20,8 @@ void sync_produce(unsigned long long elem, int val_id) {
 unsigned long long sync_consume(int val_id) {
 #if DEBUG
   unsigned long long res = queue_pop(&data_queues[val_id]);
-  printf("consume in %d\n", val_id);
-  printf("%lld\n", res);
+  printf("value [%lld] consumed in queue [%d]\n", res, val_id);
+  //printf("%lld\n", res);
   return res;
 #else
   return queue_pop(&data_queues[val_id]);
@@ -31,12 +31,12 @@ unsigned long long sync_consume(int val_id) {
 // called by master thread
 // sends function pointers to the auxiliary threads
 void sync_delegate(int tid, void *(*fp)(void *), void *args) {
-  printf("create thread!\n");
+  printf("\t >>> create thread!\n");
   pthread_create(&threads[tid], NULL, fp, args);
 }
 
 void sync_join() {
-  printf("join threads!\n");
+  printf("\t >>> join threads!\n");
   int i;
   for (i = 0; i < NUM_THREADS; i++) {
       if (threads[i]) {
@@ -46,7 +46,7 @@ void sync_join() {
 }
 
 void sync_init() {
-  printf("init queues!\n");
+  printf("\t >>> init queues!\n");
   int i;
   for (i = 0; i < NUM_QUEUES; i++) {
       queue_init(&data_queues[i]);

@@ -2,6 +2,7 @@
 #define SIMPLE_SYNC_H
 
 #define NUM_THREADS 2
+// original 256
 #define NUM_QUEUES 256
 
 void sync_produce(unsigned long long elem, int val_id);
