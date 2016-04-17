@@ -127,5 +127,5 @@ tidy-output:
 clean-examples: tidy-output
 	rm -f Example/*.bc Example/*.bc.ll Example/*.o Example/*.out
 clean-objs: tidy
-	rm -f DSWP.so runtime/libruntime.a runtime/tests/test runtime/tests/sync_test
+	rm -f DSWP.so runtime/libruntime.a runtime/tests/queue_test runtime/tests/sync_test
 clean: clean-objs clean-examples
