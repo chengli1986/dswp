@@ -4,6 +4,7 @@
 #define NUM_THREADS 2
 // original 256
 #define NUM_QUEUES 256
+#define DEBUG      1
 
 void sync_produce(unsigned long long elem, int val_id);
 unsigned long long sync_consume(int val_id);

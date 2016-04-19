@@ -11,8 +11,11 @@ void *test_delegate(void *fake_args) {
 }
 
 int main() {
-  unsigned long long args[] = {42, 43, 44};
-  sync_delegate(0, test_delegate, args);
+  /* test two threads delegate */
+  unsigned long long args_1[] = {42, 43, 44};
+  unsigned long long args_2[] = {97, 98, 99};
+  sync_delegate(0, test_delegate, args_1);
+  sync_delegate(1, test_delegate, args_2);
   sync_join();
   return 0;
 }
