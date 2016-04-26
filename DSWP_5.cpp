@@ -6,7 +6,7 @@ using namespace llvm;
 using namespace std;
 
 void DSWP::insertSynchronization(Loop *L) {
-  cout << "inserting sychronization" << endl << endl;
+  cout << "inserting synchronization" << endl << endl;
   int channel = 0;
 
   for (unsigned int i = 0; i < allEdges.size(); i++) {

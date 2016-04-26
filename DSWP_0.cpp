@@ -161,7 +161,7 @@ bool DSWP::runOnLoop(Loop *L, LPPassManager &LPM) {
   findSCC(L);
 
   if (sccNum == 1) {
-      cout << "only one SCC, can't do nuttin" << endl;
+      cout << "only one SCC, can't do partitioning..." << endl;
       clear();
       return false;
   }
