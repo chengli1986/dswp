@@ -5,8 +5,8 @@ long long fun(long long a) {
         long long res;
 	res = 0;
 	for (i = 0; i < a; i++) {
-	        //long long x = i;
-		res = res + 1;
+	        long long x = i;
+		res = res + x;
 	}
 	return res;
 }
